@@ -1,8 +1,8 @@
 # gitlink
 
-Generate web links from local file paths for GitHub, GitLab, and Bitbucket repositories.
+Generate web links from local file paths for code repositories.
 
-Currently supports **GitHub**. GitLab and Bitbucket support is planned.
+Currently only supports **GitHub**.
 
 ## Usage
 
@@ -54,14 +54,6 @@ gitlink --copy Sources/App/main.swift
 | `--copy` | Copy the URL to the system clipboard. |
 | `--help` | Show help information. |
 
-## How It Works
-
-1. Parses the input path and optional line spec
-2. Reads the `origin` remote URL from git to detect the provider (GitHub, GitLab, Bitbucket)
-3. Validates the path exists and line numbers are within range
-4. Builds the provider-specific URL
-
-The tool must be run inside a git repository with an `origin` remote. Unsupported providers return a friendly message with a link to file an issue.
 
 ## Install
 
