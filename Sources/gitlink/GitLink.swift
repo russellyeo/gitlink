@@ -2,6 +2,8 @@ import ArgumentParser
 import Foundation
 import GitLinkKit
 
+extension OutputFormat: ExpressibleByArgument {}
+
 @main
 struct GitLink: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -36,7 +38,7 @@ struct GitLink: ParsableCommand {
     var commit: String?
 
     @Option(name: .long, help: "Output format: url (default) or markdown.")
-    var output: String?
+    var output: OutputFormat?
 
     @Flag(name: .long, help: "Copy the URL to the clipboard.")
     var copy: Bool = false
@@ -45,16 +47,12 @@ struct GitLink: ParsableCommand {
         if branch != nil && commit != nil {
             throw ValidationError("--branch and --commit are mutually exclusive.")
         }
-        if let output, OutputFormat(rawValue: output) == nil {
-            let valid = OutputFormat.allCases.map(\.rawValue).joined(separator: ", ")
-            throw ValidationError("Unknown output format '\(output)'. Valid options: \(valid)")
-        }
     }
 
     func run() throws {
         let generator = LinkGenerator(gitService: ShellGitService())
         let cwd = FileManager.default.currentDirectoryPath
-        let format = output.flatMap(OutputFormat.init(rawValue:)) ?? .url
+        let format = output ?? .url
 
         let result: LinkGenerator.Result
         do {
