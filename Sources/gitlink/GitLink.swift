@@ -9,22 +9,20 @@ struct GitLink: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Generate web links from local file paths for GitHub repositories.",
         usage: """
-            gitlink <path>[:<line>[-<end_line>]]
-            gitlink --commit <hash> <path>[:<line>[-<end_line>]]
-            gitlink --branch <name> <path>[:<line>[-<end_line>]]
+            gitlink [options] <path>[:<line>[-<end_line>]]
             """,
         discussion: """
             Converts local file or directory paths into web URLs for sharing.
-            Currently supports GitHub. GitLab and Bitbucket support is planned.
+            Currently supports GitHub.
 
             Examples:
-              gitlink Sources/App/main.swift              File on current branch
-              gitlink Sources/App/main.swift:12-20        File with line range
-              gitlink Sources/App/                        Directory
+              gitlink Sources/App/main.swift                  File on current branch
+              gitlink Sources/App/main.swift:12-20            File with line range
+              gitlink Sources/App/                            Directory
               gitlink --commit HEAD Sources/App/main.swift    Pinned to HEAD commit
-              gitlink --commit abc123 Sources/App/main.swift  Pinned to specific commit
               gitlink --branch main Sources/App/main.swift    Specific branch
-              gitlink --copy Sources/App/main.swift       Copy URL to clipboard
+              gitlink --output markdown Sources/App/main.swift:12-20  Markdown link
+              gitlink --copy --output markdown Sources/App/main.swift Copy markdown to clipboard
             """
     )
 
@@ -40,7 +38,7 @@ struct GitLink: ParsableCommand {
     @Option(name: .long, help: "Output format: url (default) or markdown.")
     var output: OutputFormat?
 
-    @Flag(name: .long, help: "Copy the URL to the clipboard.")
+    @Flag(name: .long, help: "Copy the output to the clipboard.")
     var copy: Bool = false
 
     mutating func validate() throws {
