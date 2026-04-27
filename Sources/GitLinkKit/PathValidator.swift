@@ -10,7 +10,7 @@ public enum PathValidator {
     public static func validate(path: String) throws -> FileInfo {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir) else {
-            throw GHLinkError.pathNotFound(path)
+            throw GitLinkError.pathNotFound(path)
         }
 
         if isDir.boolValue {
@@ -24,7 +24,7 @@ public enum PathValidator {
 
     public static func validateLines(_ lineSpec: LineSpec, fileInfo: FileInfo) throws {
         if fileInfo.isDirectory {
-            throw GHLinkError.linesOnDirectory
+            throw GitLinkError.linesOnDirectory
         }
 
         let maxLine: Int
@@ -36,7 +36,7 @@ public enum PathValidator {
         }
 
         if maxLine > fileInfo.lineCount {
-            throw GHLinkError.lineOutOfRange(line: maxLine, totalLines: fileInfo.lineCount)
+            throw GitLinkError.lineOutOfRange(line: maxLine, totalLines: fileInfo.lineCount)
         }
     }
 }

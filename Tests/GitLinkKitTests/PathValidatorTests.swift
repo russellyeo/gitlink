@@ -1,5 +1,5 @@
 import XCTest
-@testable import GHLinkKit
+@testable import GitLinkKit
 
 final class PathValidatorTests: XCTestCase {
 
@@ -8,7 +8,7 @@ final class PathValidatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GHLinkKitTests-\(UUID().uuidString)")
+            .appendingPathComponent("GitLinkKitTests-\(UUID().uuidString)")
         try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
     }
 
@@ -52,7 +52,7 @@ final class PathValidatorTests: XCTestCase {
         // WHEN we validate the path
         // THEN it throws a pathNotFound error
         XCTAssertThrowsError(try PathValidator.validate(path: fakePath)) { error in
-            XCTAssertEqual(error as? GHLinkError, .pathNotFound(fakePath))
+            XCTAssertEqual(error as? GitLinkError, .pathNotFound(fakePath))
         }
     }
 
@@ -80,7 +80,7 @@ final class PathValidatorTests: XCTestCase {
         // WHEN we validate a line beyond the file length
         // THEN it throws a lineOutOfRange error
         XCTAssertThrowsError(try PathValidator.validateLines(.single(11), fileInfo: info)) { error in
-            XCTAssertEqual(error as? GHLinkError, .lineOutOfRange(line: 11, totalLines: 10))
+            XCTAssertEqual(error as? GitLinkError, .lineOutOfRange(line: 11, totalLines: 10))
         }
     }
 
@@ -94,7 +94,7 @@ final class PathValidatorTests: XCTestCase {
         // WHEN we validate a range where the end exceeds file length
         // THEN it throws a lineOutOfRange error
         XCTAssertThrowsError(try PathValidator.validateLines(.range(start: 5, end: 15), fileInfo: info)) { error in
-            XCTAssertEqual(error as? GHLinkError, .lineOutOfRange(line: 15, totalLines: 10))
+            XCTAssertEqual(error as? GitLinkError, .lineOutOfRange(line: 15, totalLines: 10))
         }
     }
 
@@ -107,7 +107,7 @@ final class PathValidatorTests: XCTestCase {
         // WHEN we validate lines on a directory
         // THEN it throws a linesOnDirectory error
         XCTAssertThrowsError(try PathValidator.validateLines(.single(1), fileInfo: info)) { error in
-            XCTAssertEqual(error as? GHLinkError, .linesOnDirectory)
+            XCTAssertEqual(error as? GitLinkError, .linesOnDirectory)
         }
     }
 

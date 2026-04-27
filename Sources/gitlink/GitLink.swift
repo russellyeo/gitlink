@@ -1,27 +1,28 @@
 import ArgumentParser
 import Foundation
-import GHLinkKit
+import GitLinkKit
 
 @main
-struct GHLink: ParsableCommand {
+struct GitLink: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Generate GitHub links from local file paths.",
+        abstract: "Generate web links from local file paths for GitHub, GitLab, and Bitbucket repositories.",
         usage: """
-            ghlink <path>[:<line>[-<end_line>]]
-            ghlink --commit [<hash>] <path>[:<line>[-<end_line>]]
-            ghlink --branch <name> <path>[:<line>[-<end_line>]]
+            gitlink <path>[:<line>[-<end_line>]]
+            gitlink --commit <hash> <path>[:<line>[-<end_line>]]
+            gitlink --branch <name> <path>[:<line>[-<end_line>]]
             """,
         discussion: """
-            Converts local file or directory paths into GitHub URLs for sharing.
+            Converts local file or directory paths into web URLs for sharing.
+            Currently supports GitHub. GitLab and Bitbucket support is planned.
 
             Examples:
-              ghlink Sources/App/main.swift              File on current branch
-              ghlink Sources/App/main.swift:12-20        File with line range
-              ghlink Sources/App/                        Directory
-              ghlink --commit Sources/App/main.swift     Pinned to HEAD commit
-              ghlink --commit abc123 Sources/App/main.swift  Pinned to specific commit
-              ghlink --branch main Sources/App/main.swift    Specific branch
-              ghlink --copy Sources/App/main.swift       Copy URL to clipboard
+              gitlink Sources/App/main.swift              File on current branch
+              gitlink Sources/App/main.swift:12-20        File with line range
+              gitlink Sources/App/                        Directory
+              gitlink --commit HEAD Sources/App/main.swift    Pinned to HEAD commit
+              gitlink --commit abc123 Sources/App/main.swift  Pinned to specific commit
+              gitlink --branch main Sources/App/main.swift    Specific branch
+              gitlink --copy Sources/App/main.swift       Copy URL to clipboard
             """
     )
 
@@ -31,7 +32,7 @@ struct GHLink: ParsableCommand {
     @Option(name: .long, help: "Use a specific branch instead of the current one.")
     var branch: String?
 
-    @Option(name: .long, help: "Pin to a commit. Use without value for HEAD, or provide a hash.")
+    @Option(name: .long, help: "Pin to a commit hash (e.g. --commit HEAD or --commit abc123).")
     var commit: String?
 
     @Flag(name: .long, help: "Copy the URL to the clipboard.")
@@ -55,7 +56,7 @@ struct GHLink: ParsableCommand {
                 branch: branch,
                 commit: commit
             )
-        } catch let error as GHLinkError {
+        } catch let error as GitLinkError {
             FileHandle.standardError.write(Data("Error: \(error.errorDescription ?? "\(error)")\n".utf8))
             throw ExitCode.failure
         }

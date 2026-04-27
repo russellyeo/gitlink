@@ -3,29 +3,29 @@
 import PackageDescription
 
 let package = Package(
-    name: "ghlink",
+    name: "gitlink",
     platforms: [.macOS(.v13)],
     products: [
-        .executable(name: "ghlink", targets: ["ghlink"]),
-        .library(name: "GHLinkKit", targets: ["GHLinkKit"]),
+        .executable(name: "gitlink", targets: ["gitlink"]),
+        .library(name: "GitLinkKit", targets: ["GitLinkKit"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.5.0"),
     ],
     targets: [
         .executableTarget(
-            name: "ghlink",
+            name: "gitlink",
             dependencies: [
-                "GHLinkKit",
+                "GitLinkKit",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
         .target(
-            name: "GHLinkKit"
+            name: "GitLinkKit"
         ),
         .testTarget(
-            name: "GHLinkKitTests",
-            dependencies: ["GHLinkKit"]
+            name: "GitLinkKitTests",
+            dependencies: ["GitLinkKit"]
         ),
     ]
 )

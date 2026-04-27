@@ -1,5 +1,5 @@
 import XCTest
-@testable import GHLinkKit
+@testable import GitLinkKit
 
 final class MockGitService: GitService {
     var remoteURLResult: Result<String, Error> = .success("https://github.com/depop/my-app.git")
@@ -33,7 +33,7 @@ final class LinkGeneratorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("GHLinkGenTests-\(UUID().uuidString)")
+            .appendingPathComponent("GitLinkGenTests-\(UUID().uuidString)")
         try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         mockGit = MockGitService()
@@ -129,7 +129,7 @@ final class LinkGeneratorTests: XCTestCase {
 
     // MARK: - Commit pinning
 
-    func test_generate_withCommitFlag_usesCommitHash() throws {
+    func test_generate_withCommitHash_usesResolvedHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
@@ -137,19 +137,19 @@ final class LinkGeneratorTests: XCTestCase {
         // AND the resolved commit is a full hash
         mockGit.resolveCommitResult = .success("4f2d8d5a6f0d5f8d7c1234567890abcdef123456")
 
-        // WHEN we generate a link with --commit (bare, meaning HEAD)
+        // WHEN we generate a link with --commit HEAD
         let url = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
-            commit: ""
+            commit: "HEAD"
         )
 
         // THEN the URL uses the commit hash
         XCTAssertEqual(url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
     }
 
-    func test_generate_withCommitHash_usesProvidedHash() throws {
+    func test_generate_withShortCommitHash_usesResolvedHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
@@ -183,7 +183,7 @@ final class LinkGeneratorTests: XCTestCase {
             branch: nil,
             commit: nil
         )) { error in
-            XCTAssertEqual(error as? GHLinkError, .pathNotFound(expectedPath))
+            XCTAssertEqual(error as? GitLinkError, .pathNotFound(expectedPath))
         }
     }
 
@@ -200,7 +200,7 @@ final class LinkGeneratorTests: XCTestCase {
             branch: nil,
             commit: nil
         )) { error in
-            XCTAssertEqual(error as? GHLinkError, .linesOnDirectory)
+            XCTAssertEqual(error as? GitLinkError, .linesOnDirectory)
         }
     }
 
@@ -218,26 +218,46 @@ final class LinkGeneratorTests: XCTestCase {
             branch: nil,
             commit: nil
         )) { error in
-            XCTAssertEqual(error as? GHLinkError, .lineOutOfRange(line: 10, totalLines: 5))
+            XCTAssertEqual(error as? GitLinkError, .lineOutOfRange(line: 10, totalLines: 5))
         }
     }
 
-    func test_generate_nonGitHubRemote_throwsError() {
-        // GIVEN the remote is not GitHub
+    func test_generate_unsupportedProvider_throwsProviderNotSupported() {
+        // GIVEN the remote is a GitLab repository
         mockGit.remoteURLResult = .success("https://gitlab.com/depop/my-app.git")
         // AND a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         try! "line 1".write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link
-        // THEN it throws notGitHubRemote
+        // THEN it throws providerNotSupported
         XCTAssertThrowsError(try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
             commit: nil
         )) { error in
-            XCTAssertEqual(error as? GHLinkError, .notGitHubRemote("https://gitlab.com/depop/my-app.git"))
+            XCTAssertEqual(error as? GitLinkError, .providerNotSupported(provider: "GitLab", issueURL: GitRemoteParser.issueURL))
+        }
+    }
+
+    func test_generate_unknownRemote_throwsUnknownRemote() {
+        // GIVEN the remote is an unrecognised host
+        let remoteURL = "https://codeberg.org/depop/my-app.git"
+        mockGit.remoteURLResult = .success(remoteURL)
+        // AND a file exists
+        let filePath = tempDir.appendingPathComponent("main.swift")
+        try! "line 1".write(to: filePath, atomically: true, encoding: .utf8)
+
+        // WHEN we generate a link
+        // THEN it throws unknownRemote
+        XCTAssertThrowsError(try sut.generate(
+            input: "main.swift",
+            workingDirectory: tempDir.path,
+            branch: nil,
+            commit: nil
+        )) { error in
+            XCTAssertEqual(error as? GitLinkError, .unknownRemote(remoteURL))
         }
     }
 

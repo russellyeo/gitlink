@@ -1,9 +1,10 @@
 import Foundation
 
-public enum GHLinkError: LocalizedError, Equatable {
+public enum GitLinkError: LocalizedError, Equatable {
     case notAGitRepository
     case noOriginRemote
-    case notGitHubRemote(String)
+    case providerNotSupported(provider: String, issueURL: String)
+    case unknownRemote(String)
     case pathNotFound(String)
     case linesOnDirectory
     case invalidLineSpec(String)
@@ -17,8 +18,10 @@ public enum GHLinkError: LocalizedError, Equatable {
             return "Not a git repository (or any parent up to mount point)"
         case .noOriginRemote:
             return "No 'origin' remote found"
-        case .notGitHubRemote(let url):
-            return "Remote 'origin' is not a GitHub URL: \(url)"
+        case .providerNotSupported(let provider, let issueURL):
+            return "\(provider) is not yet supported. Please file an issue: \(issueURL)"
+        case .unknownRemote(let url):
+            return "Could not detect provider for remote URL: \(url)"
         case .pathNotFound(let path):
             return "Path not found: \(path)"
         case .linesOnDirectory:

@@ -1,5 +1,5 @@
 import XCTest
-@testable import GHLinkKit
+@testable import GitLinkKit
 
 final class InputParserTests: XCTestCase {
 
@@ -92,7 +92,7 @@ final class InputParserTests: XCTestCase {
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
         XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
-            XCTAssertEqual(error as? GHLinkError, .invalidLineSpec("0"))
+            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("0"))
         }
     }
 
@@ -103,7 +103,7 @@ final class InputParserTests: XCTestCase {
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
         XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
-            XCTAssertEqual(error as? GHLinkError, .invalidLineSpec("20-12"))
+            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("20-12"))
         }
     }
 
@@ -114,7 +114,7 @@ final class InputParserTests: XCTestCase {
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
         XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
-            XCTAssertEqual(error as? GHLinkError, .invalidLineSpec("-1"))
+            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("-1"))
         }
     }
 

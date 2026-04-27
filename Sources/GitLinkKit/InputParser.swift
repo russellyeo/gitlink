@@ -31,14 +31,14 @@ public enum InputParser {
         switch spec {
         case .single(let line):
             guard line > 0 else {
-                throw GHLinkError.invalidLineSpec("\(line)")
+                throw GitLinkError.invalidLineSpec("\(line)")
             }
         case .range(let start, let end):
             guard start > 0, end > 0 else {
-                throw GHLinkError.invalidLineSpec("\(start)-\(end)")
+                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
             }
             guard end >= start else {
-                throw GHLinkError.invalidLineSpec("\(start)-\(end)")
+                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
             }
         }
     }

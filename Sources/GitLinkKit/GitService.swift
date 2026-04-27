@@ -1,30 +1,48 @@
 import Foundation
 
+public enum Provider: String, Equatable {
+    case gitHub = "GitHub"
+    case gitLab = "GitLab"
+    case bitbucket = "Bitbucket"
+}
+
 public struct GitRemote: Equatable {
+    public let provider: Provider
     public let owner: String
     public let repo: String
 }
 
 public enum GitRemoteParser {
 
+    static let issueURL = "https://github.com/russellyeo/gitlink/issues"
+
+    private static let providerMap: [(host: String, sshPrefix: String, provider: Provider)] = [
+        ("github.com", "git@github.com:", .gitHub),
+        ("gitlab.com", "git@gitlab.com:", .gitLab),
+        ("bitbucket.org", "git@bitbucket.org:", .bitbucket),
+    ]
+
     public static func parse(_ remoteURL: String) throws -> GitRemote {
-        // SSH format: git@github.com:owner/repo.git
-        if remoteURL.hasPrefix("git@github.com:") {
-            let path = String(remoteURL.dropFirst("git@github.com:".count))
-            return try extractOwnerRepo(from: path, remoteURL: remoteURL)
+        for entry in providerMap {
+            if remoteURL.hasPrefix(entry.sshPrefix) {
+                let path = String(remoteURL.dropFirst(entry.sshPrefix.count))
+                return try extractOwnerRepo(from: path, provider: entry.provider, remoteURL: remoteURL)
+            }
         }
 
-        // HTTPS format: https://github.com/owner/repo.git
-        if let url = URL(string: remoteURL),
-           url.host() == "github.com" {
-            let path = url.path.hasPrefix("/") ? String(url.path.dropFirst()) : url.path
-            return try extractOwnerRepo(from: path, remoteURL: remoteURL)
+        if let url = URL(string: remoteURL), let host = url.host() {
+            for entry in providerMap {
+                if host == entry.host {
+                    let path = url.path.hasPrefix("/") ? String(url.path.dropFirst()) : url.path
+                    return try extractOwnerRepo(from: path, provider: entry.provider, remoteURL: remoteURL)
+                }
+            }
         }
 
-        throw GHLinkError.notGitHubRemote(remoteURL)
+        throw GitLinkError.unknownRemote(remoteURL)
     }
 
-    private static func extractOwnerRepo(from path: String, remoteURL: String) throws -> GitRemote {
+    private static func extractOwnerRepo(from path: String, provider: Provider, remoteURL: String) throws -> GitRemote {
         var cleaned = path
         if cleaned.hasSuffix(".git") {
             cleaned = String(cleaned.dropLast(4))
@@ -32,10 +50,10 @@ public enum GitRemoteParser {
 
         let parts = cleaned.split(separator: "/")
         guard parts.count == 2 else {
-            throw GHLinkError.notGitHubRemote(remoteURL)
+            throw GitLinkError.unknownRemote(remoteURL)
         }
 
-        return GitRemote(owner: String(parts[0]), repo: String(parts[1]))
+        return GitRemote(provider: provider, owner: String(parts[0]), repo: String(parts[1]))
     }
 }
 
@@ -57,7 +75,7 @@ public final class ShellGitService: GitService {
     public func currentBranch() throws -> String {
         let branch = try run("git", "rev-parse", "--abbrev-ref", "HEAD")
         if branch == "HEAD" {
-            throw GHLinkError.notOnAnyBranch
+            throw GitLinkError.notOnAnyBranch
         }
         return branch
     }
@@ -71,7 +89,7 @@ public final class ShellGitService: GitService {
         do {
             return try run("git", "rev-parse", argument)
         } catch {
-            throw GHLinkError.commitNotFound(argument)
+            throw GitLinkError.commitNotFound(argument)
         }
     }
 
@@ -88,7 +106,7 @@ public final class ShellGitService: GitService {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw GHLinkError.notAGitRepository
+            throw GitLinkError.notAGitRepository
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()

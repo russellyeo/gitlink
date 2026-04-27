@@ -1,7 +1,3 @@
-// LinkGenerator.swift
-// GHLinkKit
-// 2026-04-27 — Russell Yeo
-
 import Foundation
 
 public final class LinkGenerator {
@@ -39,9 +35,8 @@ public final class LinkGenerator {
 
         let relativePath = makeRelativePath(absolutePath: absolutePath, repoRoot: repoRoot)
 
-        return URLBuilder.buildURL(
-            owner: remote.owner,
-            repo: remote.repo,
+        return try URLBuilder.buildURL(
+            remote: remote,
             ref: ref,
             path: relativePath,
             isDirectory: fileInfo.isDirectory,
