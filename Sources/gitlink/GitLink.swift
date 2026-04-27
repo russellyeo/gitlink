@@ -7,7 +7,7 @@ extension OutputFormat: ExpressibleByArgument {}
 @main
 struct GitLink: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Generate web links from local file paths for GitHub, GitLab, and Bitbucket repositories.",
+        abstract: "Generate web links from local file paths for GitHub repositories.",
         usage: """
             gitlink <path>[:<line>[-<end_line>]]
             gitlink --commit <hash> <path>[:<line>[-<end_line>]]
