@@ -36,7 +36,8 @@ public enum URLBuilder {
         lineSpec: LineSpec?
     ) -> String {
         let pathType = isDirectory ? "tree" : "blob"
-        var url = "https://github.com/\(owner)/\(repo)/\(pathType)/\(ref)/\(path)"
+        let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+        var url = "https://github.com/\(owner)/\(repo)/\(pathType)/\(ref)/\(encodedPath)"
 
         if let lineSpec {
             switch lineSpec {

@@ -78,15 +78,15 @@ final class URLBuilderTests: XCTestCase {
 
     // MARK: - Special characters in path
 
-    func test_buildURL_withSpacesInPath_preservesSpaces() throws {
+    func test_buildURL_withSpacesInPath_percentEncodesSpaces() throws {
         // GIVEN a path containing spaces
         let remote = GitRemote(provider: .gitHub, owner: "depop", repo: "my-app")
 
         // WHEN we build the URL
         let url = try URLBuilder.buildURL(remote: remote, ref: "main", path: "Sources/My App/main.swift", isDirectory: false, lineSpec: nil)
 
-        // THEN spaces are preserved (GitHub handles encoding)
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/main/Sources/My App/main.swift")
+        // THEN spaces are percent-encoded per RFC 3986
+        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/main/Sources/My%20App/main.swift")
     }
 
     // MARK: - Unsupported providers
