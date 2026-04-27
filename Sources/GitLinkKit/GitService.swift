@@ -69,11 +69,20 @@ public final class ShellGitService: GitService {
     public init() {}
 
     public func remoteURL() throws -> String {
-        try run("git", "remote", "get-url", "origin")
+        do {
+            return try run("git", "remote", "get-url", "origin")
+        } catch {
+            throw GitLinkError.noOriginRemote
+        }
     }
 
     public func currentBranch() throws -> String {
-        let branch = try run("git", "rev-parse", "--abbrev-ref", "HEAD")
+        let branch: String
+        do {
+            branch = try run("git", "rev-parse", "--abbrev-ref", "HEAD")
+        } catch {
+            throw GitLinkError.notAGitRepository
+        }
         if branch == "HEAD" {
             throw GitLinkError.notOnAnyBranch
         }
@@ -81,7 +90,11 @@ public final class ShellGitService: GitService {
     }
 
     public func repositoryRoot() throws -> String {
-        try run("git", "rev-parse", "--show-toplevel")
+        do {
+            return try run("git", "rev-parse", "--show-toplevel")
+        } catch {
+            throw GitLinkError.notAGitRepository
+        }
     }
 
     public func resolveCommit(_ ref: String?) throws -> String {
@@ -92,6 +105,8 @@ public final class ShellGitService: GitService {
             throw GitLinkError.commitNotFound(argument)
         }
     }
+
+    private struct ShellError: Error {}
 
     private func run(_ args: String...) throws -> String {
         let process = Process()
@@ -106,7 +121,7 @@ public final class ShellGitService: GitService {
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
-            throw GitLinkError.notAGitRepository
+            throw ShellError()
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
