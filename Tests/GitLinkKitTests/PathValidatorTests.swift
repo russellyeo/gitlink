@@ -111,6 +111,19 @@ final class PathValidatorTests: XCTestCase {
         }
     }
 
+    func test_validate_fileWithTrailingNewline_countsCorrectly() throws {
+        // GIVEN a file with 10 lines and a trailing newline
+        let filePath = tempDir.appendingPathComponent("trailing.swift")
+        let content = (1...10).map { "line \($0)" }.joined(separator: "\n") + "\n"
+        try content.write(to: filePath, atomically: true, encoding: .utf8)
+
+        // WHEN we validate the path
+        let result = try PathValidator.validate(path: filePath.path)
+
+        // THEN line count is 10, not 11
+        XCTAssertEqual(result.lineCount, 10)
+    }
+
     func test_validate_emptyFile_hasZeroLines() throws {
         // GIVEN an empty file
         let filePath = tempDir.appendingPathComponent("empty.swift")

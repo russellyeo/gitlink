@@ -18,7 +18,10 @@ public enum PathValidator {
         }
 
         let content = try String(contentsOfFile: path, encoding: .utf8)
-        let lineCount = content.isEmpty ? 0 : content.components(separatedBy: "\n").count
+        if content.isEmpty { return FileInfo(isDirectory: false, lineCount: 0) }
+        var lines = content.components(separatedBy: "\n")
+        if lines.last == "" { lines.removeLast() }
+        let lineCount = lines.count
         return FileInfo(isDirectory: false, lineCount: lineCount)
     }
 
