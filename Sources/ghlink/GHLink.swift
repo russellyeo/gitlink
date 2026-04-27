@@ -56,7 +56,8 @@ struct GHLink: ParsableCommand {
                 commit: commit
             )
         } catch let error as GHLinkError {
-            throw CleanExit.message("Error: \(error.errorDescription ?? "\(error)")")
+            FileHandle.standardError.write(Data("Error: \(error.errorDescription ?? "\(error)")\n".utf8))
+            throw ExitCode.failure
         }
 
         print(url)
