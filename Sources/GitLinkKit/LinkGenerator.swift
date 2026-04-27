@@ -8,12 +8,18 @@ public final class LinkGenerator {
         self.gitService = gitService
     }
 
+    public struct Result {
+        public let url: String
+        public let relativePath: String
+        public let lineSpec: LineSpec?
+    }
+
     public func generate(
         input: String,
         workingDirectory: String,
         branch: String?,
         commit: String?
-    ) throws -> String {
+    ) throws -> Result {
         let parsed = InputParser.parse(input)
 
         try parsed.lineSpec?.validate()
@@ -33,11 +39,17 @@ public final class LinkGenerator {
 
         let relativePath = makeRelativePath(absolutePath: absolutePath, repoRoot: repoRoot)
 
-        return try URLBuilder.buildURL(
+        let url = try URLBuilder.buildURL(
             remote: remote,
             ref: ref,
             path: relativePath,
             isDirectory: fileInfo.isDirectory,
+            lineSpec: parsed.lineSpec
+        )
+
+        return Result(
+            url: url,
+            relativePath: relativePath,
             lineSpec: parsed.lineSpec
         )
     }

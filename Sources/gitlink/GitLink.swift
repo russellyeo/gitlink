@@ -35,6 +35,9 @@ struct GitLink: ParsableCommand {
     @Option(name: .long, help: "Pin to a commit hash (e.g. --commit HEAD or --commit abc123).")
     var commit: String?
 
+    @Option(name: .long, help: "Output format: url (default) or markdown.")
+    var output: String?
+
     @Flag(name: .long, help: "Copy the URL to the clipboard.")
     var copy: Bool = false
 
@@ -42,15 +45,20 @@ struct GitLink: ParsableCommand {
         if branch != nil && commit != nil {
             throw ValidationError("--branch and --commit are mutually exclusive.")
         }
+        if let output, OutputFormat(rawValue: output) == nil {
+            let valid = OutputFormat.allCases.map(\.rawValue).joined(separator: ", ")
+            throw ValidationError("Unknown output format '\(output)'. Valid options: \(valid)")
+        }
     }
 
     func run() throws {
         let generator = LinkGenerator(gitService: ShellGitService())
         let cwd = FileManager.default.currentDirectoryPath
+        let format = output.flatMap(OutputFormat.init(rawValue:)) ?? .url
 
-        let url: String
+        let result: LinkGenerator.Result
         do {
-            url = try generator.generate(
+            result = try generator.generate(
                 input: path,
                 workingDirectory: cwd,
                 branch: branch,
@@ -61,10 +69,17 @@ struct GitLink: ParsableCommand {
             throw ExitCode.failure
         }
 
-        print(url)
+        let formatted = OutputFormatter.format(
+            url: result.url,
+            path: result.relativePath,
+            lineSpec: result.lineSpec,
+            format: format
+        )
+
+        print(formatted)
 
         if copy {
-            copyToClipboard(url)
+            copyToClipboard(formatted)
         }
     }
 

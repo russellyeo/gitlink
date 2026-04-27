@@ -57,7 +57,7 @@ final class LinkGeneratorTests: XCTestCase {
         mockGit.currentBranchResult = .success("feature/search")
 
         // WHEN we generate a link with no options
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -65,7 +65,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the current branch
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/feature/search/main.swift")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/feature/search/main.swift")
     }
 
     // MARK: - File URL with line range
@@ -77,7 +77,7 @@ final class LinkGeneratorTests: XCTestCase {
         try content.write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link with a line range
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift:12-20",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -85,7 +85,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL includes the line range fragment
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/main/main.swift#L12-L20")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/main.swift#L12-L20")
     }
 
     // MARK: - Directory URL
@@ -96,7 +96,7 @@ final class LinkGeneratorTests: XCTestCase {
         try FileManager.default.createDirectory(at: dirPath, withIntermediateDirectories: true)
 
         // WHEN we generate a link for a directory
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "Sources",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -104,7 +104,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses tree/
-        XCTAssertEqual(url, "https://github.com/depop/my-app/tree/main/Sources")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/main/Sources")
     }
 
     // MARK: - Branch override
@@ -116,7 +116,7 @@ final class LinkGeneratorTests: XCTestCase {
         try content.write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link with a branch override
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: "develop",
@@ -124,7 +124,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the overridden branch
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/develop/main.swift")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/develop/main.swift")
     }
 
     // MARK: - Commit pinning
@@ -138,7 +138,7 @@ final class LinkGeneratorTests: XCTestCase {
         mockGit.resolveCommitResult = .success("4f2d8d5a6f0d5f8d7c1234567890abcdef123456")
 
         // WHEN we generate a link with --commit HEAD
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -146,7 +146,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the commit hash
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
     }
 
     func test_generate_withShortCommitHash_usesResolvedHash() throws {
@@ -158,7 +158,7 @@ final class LinkGeneratorTests: XCTestCase {
         mockGit.resolveCommitResult = .success("abc123def456789")
 
         // WHEN we generate a link with a specific commit hash
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -166,7 +166,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the resolved hash
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
     }
 
     // MARK: - Error cases
@@ -272,7 +272,7 @@ final class LinkGeneratorTests: XCTestCase {
         try content.write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link for a nested file
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "Sources/App/main.swift:5",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -280,7 +280,7 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the path is relative to the repo root
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/main/Sources/App/main.swift#L5")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/Sources/App/main.swift#L5")
     }
 
     // MARK: - SSH remote
@@ -294,7 +294,7 @@ final class LinkGeneratorTests: XCTestCase {
         try content.write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link
-        let url = try sut.generate(
+        let result = try sut.generate(
             input: "main.swift",
             workingDirectory: tempDir.path,
             branch: nil,
@@ -302,6 +302,6 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL is correct
-        XCTAssertEqual(url, "https://github.com/depop/my-app/blob/main/main.swift")
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/main.swift")
     }
 }
