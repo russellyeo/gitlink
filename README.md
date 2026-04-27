@@ -43,6 +43,10 @@ gitlink --branch main Sources/App/main.swift
 
 # Copy to clipboard
 gitlink --copy Sources/App/main.swift
+
+# Markdown link
+gitlink --output markdown Sources/App/main.swift:12-20
+# → [Sources/App/main.swift#L12-L20](https://github.com/your-org/your-repo/blob/feature-x/Sources/App/main.swift#L12-L20)
 ```
 
 ### Options
@@ -51,11 +55,18 @@ gitlink --copy Sources/App/main.swift
 |---|---|
 | `--commit <hash>` | Pin to a commit hash (e.g. `--commit HEAD` or `--commit abc123`). |
 | `--branch <name>` | Use a specific branch instead of the current one. |
-| `--copy` | Copy the URL to the system clipboard. |
+| `--output <format>` | Output format: `url` (default) or `markdown`. |
+| `--copy` | Copy the output to the system clipboard. |
 | `--help` | Show help information. |
 
 
 ## Install
+
+### Mint
+
+```bash
+mint install russellyeo/gitlink
+```
 
 ### Build from source
 
@@ -63,9 +74,7 @@ gitlink --copy Sources/App/main.swift
 git clone https://github.com/russellyeo/gitlink.git
 cd gitlink
 swift build -c release
-# Binary is at .build/release/gitlink
-# Optionally copy to your PATH:
-cp .build/release/gitlink /usr/local/bin/
+sudo cp .build/release/gitlink /usr/local/bin/
 ```
 
 ## Agent Integration
