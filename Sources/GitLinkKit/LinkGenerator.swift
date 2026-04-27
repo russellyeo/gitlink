@@ -16,9 +16,7 @@ public final class LinkGenerator {
     ) throws -> String {
         let parsed = InputParser.parse(input)
 
-        if let lineSpec = parsed.lineSpec {
-            try InputParser.validateLineSpec(lineSpec)
-        }
+        try parsed.lineSpec?.validate()
 
         let repoRoot = try gitService.repositoryRoot()
         let absolutePath = resolvePath(parsed.path, workingDirectory: workingDirectory)

@@ -3,6 +3,29 @@ import Foundation
 public enum LineSpec: Equatable {
     case single(Int)
     case range(start: Int, end: Int)
+
+    public var maxLine: Int {
+        switch self {
+        case .single(let line): return line
+        case .range(_, let end): return end
+        }
+    }
+
+    public func validate() throws {
+        switch self {
+        case .single(let line):
+            guard line > 0 else {
+                throw GitLinkError.invalidLineSpec("\(line)")
+            }
+        case .range(let start, let end):
+            guard start > 0, end > 0 else {
+                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
+            }
+            guard end >= start else {
+                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
+            }
+        }
+    }
 }
 
 public struct ParsedInput: Equatable {
@@ -25,22 +48,6 @@ public enum InputParser {
         }
 
         return ParsedInput(path: input, lineSpec: nil)
-    }
-
-    public static func validateLineSpec(_ spec: LineSpec) throws {
-        switch spec {
-        case .single(let line):
-            guard line > 0 else {
-                throw GitLinkError.invalidLineSpec("\(line)")
-            }
-        case .range(let start, let end):
-            guard start > 0, end > 0 else {
-                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
-            }
-            guard end >= start else {
-                throw GitLinkError.invalidLineSpec("\(start)-\(end)")
-            }
-        }
     }
 
     private static func parseLineSpec(_ text: String) -> LineSpec? {

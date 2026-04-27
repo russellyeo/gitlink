@@ -27,16 +27,8 @@ public enum PathValidator {
             throw GitLinkError.linesOnDirectory
         }
 
-        let maxLine: Int
-        switch lineSpec {
-        case .single(let line):
-            maxLine = line
-        case .range(_, let end):
-            maxLine = end
-        }
-
-        if maxLine > fileInfo.lineCount {
-            throw GitLinkError.lineOutOfRange(line: maxLine, totalLines: fileInfo.lineCount)
+        if lineSpec.maxLine > fileInfo.lineCount {
+            throw GitLinkError.lineOutOfRange(line: lineSpec.maxLine, totalLines: fileInfo.lineCount)
         }
     }
 }

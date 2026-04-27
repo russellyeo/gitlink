@@ -91,7 +91,7 @@ final class InputParserTests: XCTestCase {
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
+        XCTAssertThrowsError(try spec.validate()) { error in
             XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("0"))
         }
     }
@@ -102,7 +102,7 @@ final class InputParserTests: XCTestCase {
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
+        XCTAssertThrowsError(try spec.validate()) { error in
             XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("20-12"))
         }
     }
@@ -113,7 +113,7 @@ final class InputParserTests: XCTestCase {
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try InputParser.validateLineSpec(spec)) { error in
+        XCTAssertThrowsError(try spec.validate()) { error in
             XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("-1"))
         }
     }
@@ -124,7 +124,7 @@ final class InputParserTests: XCTestCase {
 
         // WHEN we validate the line spec
         // THEN no error is thrown
-        XCTAssertNoThrow(try InputParser.validateLineSpec(spec))
+        XCTAssertNoThrow(try spec.validate())
     }
 
     func test_validateLineSpec_withValidRange_doesNotThrow() {
@@ -133,7 +133,7 @@ final class InputParserTests: XCTestCase {
 
         // WHEN we validate the line spec
         // THEN no error is thrown
-        XCTAssertNoThrow(try InputParser.validateLineSpec(spec))
+        XCTAssertNoThrow(try spec.validate())
     }
 
     func test_parse_pathWithSameStartAndEnd_returnsSingleLine() {
