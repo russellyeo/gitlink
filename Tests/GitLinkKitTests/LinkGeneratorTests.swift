@@ -6,6 +6,7 @@ final class MockGitService: GitService {
     var currentBranchResult: Result<String, Error> = .success("main")
     var repositoryRootResult: Result<String, Error> = .success("/tmp/repo")
     var resolveCommitResult: Result<String, Error> = .success("abc123def456")
+    var resolveCommitCalledWith: String?
 
     func remoteURL() throws -> String {
         try remoteURLResult.get()
@@ -20,7 +21,8 @@ final class MockGitService: GitService {
     }
 
     func resolveCommit(_ ref: String?) throws -> String {
-        try resolveCommitResult.get()
+        resolveCommitCalledWith = ref
+        return try resolveCommitResult.get()
     }
 }
 
@@ -147,6 +149,8 @@ final class LinkGeneratorTests: XCTestCase {
 
         // THEN the URL uses the commit hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
+        // AND the ref "HEAD" was forwarded to the git service
+        XCTAssertEqual(mockGit.resolveCommitCalledWith, "HEAD")
     }
 
     func test_generate_withShortCommitHash_usesResolvedHash() throws {
@@ -167,6 +171,8 @@ final class LinkGeneratorTests: XCTestCase {
 
         // THEN the URL uses the resolved hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
+        // AND the short hash was forwarded to the git service
+        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
     }
 
     // MARK: - Error cases
