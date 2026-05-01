@@ -80,8 +80,6 @@ Requirements:
 
 - macOS 13+
 - Swift 5.9+
-- Git
-- A supported `origin` remote (GitHub)
 
 ```bash
 git clone https://github.com/russellyeo/gitlink.git
