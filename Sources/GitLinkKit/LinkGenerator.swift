@@ -10,18 +10,56 @@ public final class LinkGenerator {
 
     public struct Result {
         public let url: String
-        public let relativePath: String
-        public let lineSpec: LineSpec?
+        public let target: Target
+        public let repoName: String
+        public let ref: String
     }
 
     public func generate(
-        input: String,
+        target: Target,
+        workingDirectory: String,
+        branch: String?
+    ) throws -> Result {
+        let remoteURLString = try gitService.remoteURL()
+        let remote = try GitRemoteParser.parse(remoteURLString)
+
+        switch target {
+        case .path(let parsed):
+            return try generatePath(
+                parsed: parsed,
+                workingDirectory: workingDirectory,
+                branch: branch,
+                remote: remote
+            )
+
+        case .commit(let hash):
+            let resolved = try gitService.resolveCommit(hash)
+            let url = try URLBuilder.buildURL(
+                remote: remote,
+                ref: resolved,
+                target: .commit(resolved),
+                isDirectory: nil
+            )
+            return Result(url: url, target: .commit(resolved), repoName: remote.repo, ref: resolved)
+
+        case .repoRoot:
+            let ref = try branch ?? gitService.currentBranch()
+            let url = try URLBuilder.buildURL(
+                remote: remote,
+                ref: ref,
+                target: .repoRoot,
+                isDirectory: nil
+            )
+            return Result(url: url, target: .repoRoot, repoName: remote.repo, ref: ref)
+        }
+    }
+
+    private func generatePath(
+        parsed: ParsedInput,
         workingDirectory: String,
         branch: String?,
-        commit: String?
+        remote: GitRemote
     ) throws -> Result {
-        let parsed = InputParser.parse(input)
-
         try parsed.lineSpec?.validate()
 
         let repoRoot = try gitService.repositoryRoot()
@@ -32,37 +70,18 @@ public final class LinkGenerator {
             try PathValidator.validateLines(lineSpec, fileInfo: fileInfo)
         }
 
-        let remoteURLString = try gitService.remoteURL()
-        let remote = try GitRemoteParser.parse(remoteURLString)
-
-        let ref = try resolveRef(branch: branch, commit: commit)
-
+        let ref = try branch ?? gitService.currentBranch()
         let relativePath = makeRelativePath(absolutePath: absolutePath, repoRoot: repoRoot)
+        let relativeTarget = Target.path(ParsedInput(path: relativePath, lineSpec: parsed.lineSpec))
 
         let url = try URLBuilder.buildURL(
             remote: remote,
             ref: ref,
-            path: relativePath,
-            isDirectory: fileInfo.isDirectory,
-            lineSpec: parsed.lineSpec
+            target: relativeTarget,
+            isDirectory: fileInfo.isDirectory
         )
 
-        return Result(
-            url: url,
-            relativePath: relativePath,
-            lineSpec: parsed.lineSpec
-        )
-    }
-
-    private func resolveRef(branch: String?, commit: String?) throws -> String {
-        if let commit {
-            let ref = commit.isEmpty ? nil : commit
-            return try gitService.resolveCommit(ref)
-        }
-        if let branch {
-            return branch
-        }
-        return try gitService.currentBranch()
+        return Result(url: url, target: relativeTarget, repoName: remote.repo, ref: ref)
     }
 
     private func resolvePath(_ path: String, workingDirectory: String) -> String {

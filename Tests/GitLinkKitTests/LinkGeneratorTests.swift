@@ -60,10 +60,9 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link with no options
         let result = try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )
 
         // THEN the URL uses the current branch
@@ -80,10 +79,9 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link with a line range
         let result = try sut.generate(
-            input: "main.swift:12-20",
+            target: .path(InputParser.parse("main.swift:12-20")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )
 
         // THEN the URL includes the line range fragment
@@ -99,10 +97,9 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link for a directory
         let result = try sut.generate(
-            input: "Sources",
+            target: .path(InputParser.parse("Sources")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )
 
         // THEN the URL uses tree/
@@ -119,17 +116,16 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link with a branch override
         let result = try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: "develop",
-            commit: nil
+            branch: "develop"
         )
 
         // THEN the URL uses the overridden branch
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/develop/main.swift")
     }
 
-    // MARK: - Commit pinning
+    // MARK: - Commit pinning (resolved hash passed as branch)
 
     func test_generate_withCommitHash_usesResolvedHash() throws {
         // GIVEN a file exists
@@ -137,20 +133,17 @@ final class LinkGeneratorTests: XCTestCase {
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
         try content.write(to: filePath, atomically: true, encoding: .utf8)
         // AND the resolved commit is a full hash
-        mockGit.resolveCommitResult = .success("4f2d8d5a6f0d5f8d7c1234567890abcdef123456")
+        let resolvedHash = "4f2d8d5a6f0d5f8d7c1234567890abcdef123456"
 
-        // WHEN we generate a link with --commit HEAD
+        // WHEN we generate a link with a resolved commit hash as the branch
         let result = try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: "HEAD"
+            branch: resolvedHash
         )
 
         // THEN the URL uses the commit hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
-        // AND the ref "HEAD" was forwarded to the git service
-        XCTAssertEqual(mockGit.resolveCommitCalledWith, "HEAD")
     }
 
     func test_generate_withShortCommitHash_usesResolvedHash() throws {
@@ -159,20 +152,17 @@ final class LinkGeneratorTests: XCTestCase {
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
         try content.write(to: filePath, atomically: true, encoding: .utf8)
         // AND the resolved commit returns a full hash
-        mockGit.resolveCommitResult = .success("abc123def456789")
+        let resolvedHash = "abc123def456789"
 
-        // WHEN we generate a link with a specific commit hash
+        // WHEN we generate a link with the resolved hash as the branch
         let result = try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: "abc123"
+            branch: resolvedHash
         )
 
         // THEN the URL uses the resolved hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
-        // AND the short hash was forwarded to the git service
-        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
     }
 
     // MARK: - Error cases
@@ -184,10 +174,9 @@ final class LinkGeneratorTests: XCTestCase {
         // WHEN we generate a link
         // THEN it throws pathNotFound
         XCTAssertThrowsError(try sut.generate(
-            input: "nope.swift",
+            target: .path(InputParser.parse("nope.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )) { error in
             XCTAssertEqual(error as? GitLinkError, .pathNotFound(expectedPath))
         }
@@ -201,10 +190,9 @@ final class LinkGeneratorTests: XCTestCase {
         // WHEN we generate a link with lines on a directory
         // THEN it throws linesOnDirectory
         XCTAssertThrowsError(try sut.generate(
-            input: "Sources:5",
+            target: .path(InputParser.parse("Sources:5")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )) { error in
             XCTAssertEqual(error as? GitLinkError, .linesOnDirectory)
         }
@@ -219,10 +207,9 @@ final class LinkGeneratorTests: XCTestCase {
         // WHEN we generate a link referencing line 10
         // THEN it throws lineOutOfRange
         XCTAssertThrowsError(try sut.generate(
-            input: "short.swift:10",
+            target: .path(InputParser.parse("short.swift:10")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )) { error in
             XCTAssertEqual(error as? GitLinkError, .lineOutOfRange(line: 10, totalLines: 5))
         }
@@ -238,10 +225,9 @@ final class LinkGeneratorTests: XCTestCase {
         // WHEN we generate a link
         // THEN it throws providerNotSupported
         XCTAssertThrowsError(try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )) { error in
             XCTAssertEqual(error as? GitLinkError, .providerNotSupported(provider: "GitLab", issueURL: GitRemoteParser.issueURL))
         }
@@ -258,10 +244,9 @@ final class LinkGeneratorTests: XCTestCase {
         // WHEN we generate a link
         // THEN it throws unknownRemote
         XCTAssertThrowsError(try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )) { error in
             XCTAssertEqual(error as? GitLinkError, .unknownRemote(remoteURL))
         }
@@ -279,10 +264,9 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link for a nested file
         let result = try sut.generate(
-            input: "Sources/App/main.swift:5",
+            target: .path(InputParser.parse("Sources/App/main.swift:5")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )
 
         // THEN the path is relative to the repo root
@@ -301,13 +285,70 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link
         let result = try sut.generate(
-            input: "main.swift",
+            target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: nil,
-            commit: nil
+            branch: nil
         )
 
         // THEN the URL is correct
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/main.swift")
+    }
+
+    // MARK: - Commit mode (no path)
+
+    func test_generate_commitTargetWithNoPath_producesCommitURL() throws {
+        // GIVEN the resolved commit is a full hash
+        mockGit.resolveCommitResult = .success("abc123def456789")
+
+        // WHEN we generate a link for a commit target
+        let result = try sut.generate(
+            target: .commit("abc123"),
+            workingDirectory: tempDir.path,
+            branch: nil
+        )
+
+        // THEN the URL points to the commit page
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/commit/abc123def456789")
+        // AND the repo name is captured
+        XCTAssertEqual(result.repoName, "my-app")
+        // AND the ref is the resolved hash
+        XCTAssertEqual(result.ref, "abc123def456789")
+        // AND the commit ref was forwarded to the git service
+        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
+    }
+
+    // MARK: - Repo root mode
+
+    func test_generate_repoRootTarget_producesTreeURL() throws {
+        // GIVEN the current branch is "main"
+        mockGit.currentBranchResult = .success("main")
+
+        // WHEN we generate a link for a repo root target
+        let result = try sut.generate(
+            target: .repoRoot,
+            workingDirectory: tempDir.path,
+            branch: nil
+        )
+
+        // THEN the URL points to the repo tree
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/main")
+        // AND the repo name is captured
+        XCTAssertEqual(result.repoName, "my-app")
+        // AND the ref is the current branch
+        XCTAssertEqual(result.ref, "main")
+    }
+
+    func test_generate_repoRootWithBranchOverride_usesBranch() throws {
+        // WHEN we generate a link for a repo root target with a branch override
+        let result = try sut.generate(
+            target: .repoRoot,
+            workingDirectory: tempDir.path,
+            branch: "develop"
+        )
+
+        // THEN the URL includes the overridden branch
+        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/develop")
+        // AND the ref is the overridden branch
+        XCTAssertEqual(result.ref, "develop")
     }
 }
