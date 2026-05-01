@@ -1,11 +1,11 @@
-import XCTest
+import Testing
 @testable import GitLinkKit
 
-final class InputParserTests: XCTestCase {
+@Suite struct InputParserTests {
 
     // MARK: - Path only (no line spec)
 
-    func test_parse_filePath_returnsPathWithNoLines() {
+    @Test func parse_filePath_returnsPathWithNoLines() {
         // GIVEN a plain file path with no line spec
         let input = "Sources/App/main.swift"
 
@@ -13,11 +13,11 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the path is extracted with no line spec
-        XCTAssertEqual(result.path, "Sources/App/main.swift")
-        XCTAssertNil(result.lineSpec)
+        #expect(result.path == "Sources/App/main.swift")
+        #expect(result.lineSpec == nil)
     }
 
-    func test_parse_directoryPath_returnsPathWithNoLines() {
+    @Test func parse_directoryPath_returnsPathWithNoLines() {
         // GIVEN a directory path
         let input = "Sources/App/"
 
@@ -25,13 +25,13 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the path is extracted with no line spec
-        XCTAssertEqual(result.path, "Sources/App/")
-        XCTAssertNil(result.lineSpec)
+        #expect(result.path == "Sources/App/")
+        #expect(result.lineSpec == nil)
     }
 
     // MARK: - Single line
 
-    func test_parse_pathWithSingleLine_returnsSingleLine() {
+    @Test func parse_pathWithSingleLine_returnsSingleLine() {
         // GIVEN a path with a single line number
         let input = "Sources/App/main.swift:12"
 
@@ -39,13 +39,13 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the path and single line are extracted
-        XCTAssertEqual(result.path, "Sources/App/main.swift")
-        XCTAssertEqual(result.lineSpec, .single(12))
+        #expect(result.path == "Sources/App/main.swift")
+        #expect(result.lineSpec == .single(12))
     }
 
     // MARK: - Line range
 
-    func test_parse_pathWithLineRange_returnsRange() {
+    @Test func parse_pathWithLineRange_returnsRange() {
         // GIVEN a path with a line range
         let input = "Sources/App/main.swift:12-20"
 
@@ -53,13 +53,13 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the path and line range are extracted
-        XCTAssertEqual(result.path, "Sources/App/main.swift")
-        XCTAssertEqual(result.lineSpec, .range(start: 12, end: 20))
+        #expect(result.path == "Sources/App/main.swift")
+        #expect(result.lineSpec == .range(start: 12, end: 20))
     }
 
     // MARK: - Edge cases
 
-    func test_parse_pathWithNoColon_treatsWholeInputAsPath() {
+    @Test func parse_pathWithNoColon_treatsWholeInputAsPath() {
         // GIVEN a path with no colon at all
         let input = "README.md"
 
@@ -67,11 +67,11 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the entire input is the path
-        XCTAssertEqual(result.path, "README.md")
-        XCTAssertNil(result.lineSpec)
+        #expect(result.path == "README.md")
+        #expect(result.lineSpec == nil)
     }
 
-    func test_parse_pathWithNonNumericAfterColon_treatsWholeInputAsPath() {
+    @Test func parse_pathWithNonNumericAfterColon_treatsWholeInputAsPath() {
         // GIVEN a path where the part after the last colon is not numeric
         let input = "Sources/App/main.swift:abc"
 
@@ -79,64 +79,64 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN the entire input is treated as the path (colon is part of path)
-        XCTAssertEqual(result.path, "Sources/App/main.swift:abc")
-        XCTAssertNil(result.lineSpec)
+        #expect(result.path == "Sources/App/main.swift:abc")
+        #expect(result.lineSpec == nil)
     }
 
     // MARK: - Validation errors
 
-    func test_validateLineSpec_withZeroLine_throwsInvalidLineSpec() {
+    @Test func validateLineSpec_withZeroLine_throwsInvalidLineSpec() {
         // GIVEN a line spec with zero
         let spec = LineSpec.single(0)
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try spec.validate()) { error in
-            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("0"))
+        #expect(throws: GitLinkError.invalidLineSpec("0")) {
+            try spec.validate()
         }
     }
 
-    func test_validateLineSpec_withReversedRange_throwsInvalidLineSpec() {
+    @Test func validateLineSpec_withReversedRange_throwsInvalidLineSpec() {
         // GIVEN a line spec where start > end
         let spec = LineSpec.range(start: 20, end: 12)
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try spec.validate()) { error in
-            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("20-12"))
+        #expect(throws: GitLinkError.invalidLineSpec("20-12")) {
+            try spec.validate()
         }
     }
 
-    func test_validateLineSpec_withNegativeLine_throwsInvalidLineSpec() {
+    @Test func validateLineSpec_withNegativeLine_throwsInvalidLineSpec() {
         // GIVEN a line spec with a negative number
         let spec = LineSpec.single(-1)
 
         // WHEN we validate the line spec
         // THEN it throws an invalidLineSpec error
-        XCTAssertThrowsError(try spec.validate()) { error in
-            XCTAssertEqual(error as? GitLinkError, .invalidLineSpec("-1"))
+        #expect(throws: GitLinkError.invalidLineSpec("-1")) {
+            try spec.validate()
         }
     }
 
-    func test_validateLineSpec_withValidSingleLine_doesNotThrow() {
+    @Test func validateLineSpec_withValidSingleLine_doesNotThrow() throws {
         // GIVEN a valid single line spec
         let spec = LineSpec.single(5)
 
         // WHEN we validate the line spec
         // THEN no error is thrown
-        XCTAssertNoThrow(try spec.validate())
+        try spec.validate()
     }
 
-    func test_validateLineSpec_withValidRange_doesNotThrow() {
+    @Test func validateLineSpec_withValidRange_doesNotThrow() throws {
         // GIVEN a valid line range
         let spec = LineSpec.range(start: 5, end: 10)
 
         // WHEN we validate the line spec
         // THEN no error is thrown
-        XCTAssertNoThrow(try spec.validate())
+        try spec.validate()
     }
 
-    func test_parse_pathWithSameStartAndEnd_returnsSingleLine() {
+    @Test func parse_pathWithSameStartAndEnd_returnsSingleLine() {
         // GIVEN a range where start equals end
         let input = "main.swift:5-5"
 
@@ -144,7 +144,7 @@ final class InputParserTests: XCTestCase {
         let result = InputParser.parse(input)
 
         // THEN it is treated as a range (start equals end)
-        XCTAssertEqual(result.path, "main.swift")
-        XCTAssertEqual(result.lineSpec, .range(start: 5, end: 5))
+        #expect(result.path == "main.swift")
+        #expect(result.lineSpec == .range(start: 5, end: 5))
     }
 }

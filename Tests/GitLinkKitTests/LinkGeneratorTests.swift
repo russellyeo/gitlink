@@ -1,4 +1,5 @@
-import XCTest
+import Foundation
+import Testing
 @testable import GitLinkKit
 
 final class MockGitService: GitService {
@@ -26,31 +27,25 @@ final class MockGitService: GitService {
     }
 }
 
-final class LinkGeneratorTests: XCTestCase {
+@Suite struct LinkGeneratorTests {
 
-    private var tempDir: URL!
-    private var mockGit: MockGitService!
-    private var sut: LinkGenerator!
+    private let tempDir: URL
+    private let mockGit: MockGitService
+    private let sut: LinkGenerator
 
-    override func setUp() {
-        super.setUp()
+    init() throws {
         tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("GitLinkGenTests-\(UUID().uuidString)")
-        try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         mockGit = MockGitService()
         mockGit.repositoryRootResult = .success(tempDir.path)
         sut = LinkGenerator(gitService: mockGit)
     }
 
-    override func tearDown() {
-        try? FileManager.default.removeItem(at: tempDir)
-        super.tearDown()
-    }
-
     // MARK: - File URL with current branch
 
-    func test_generate_fileWithNoOptions_usesCurrentBranch() throws {
+    @Test func generate_fileWithNoOptions_usesCurrentBranch() throws {
         // GIVEN a file exists in the repo
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...20).map { "line \($0)" }.joined(separator: "\n")
@@ -66,12 +61,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the current branch
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/feature/search/main.swift")
+        #expect(result.url == "https://github.com/depop/my-app/blob/feature/search/main.swift")
     }
 
     // MARK: - File URL with line range
 
-    func test_generate_fileWithLineRange_includesLineFragment() throws {
+    @Test func generate_fileWithLineRange_includesLineFragment() throws {
         // GIVEN a file exists with 20 lines
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...20).map { "line \($0)" }.joined(separator: "\n")
@@ -85,12 +80,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL includes the line range fragment
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/main.swift#L12-L20")
+        #expect(result.url == "https://github.com/depop/my-app/blob/main/main.swift#L12-L20")
     }
 
     // MARK: - Directory URL
 
-    func test_generate_directory_usesTreePath() throws {
+    @Test func generate_directory_usesTreePath() throws {
         // GIVEN a directory exists in the repo
         let dirPath = tempDir.appendingPathComponent("Sources")
         try FileManager.default.createDirectory(at: dirPath, withIntermediateDirectories: true)
@@ -103,12 +98,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses tree/
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/main/Sources")
+        #expect(result.url == "https://github.com/depop/my-app/tree/main/Sources")
     }
 
     // MARK: - Branch override
 
-    func test_generate_withBranchOverride_usesBranch() throws {
+    @Test func generate_withBranchOverride_usesBranch() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
@@ -122,12 +117,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the overridden branch
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/develop/main.swift")
+        #expect(result.url == "https://github.com/depop/my-app/blob/develop/main.swift")
     }
 
     // MARK: - Commit pinning
 
-    func test_generate_withCommitHash_resolvesAndUsesHash() throws {
+    @Test func generate_withCommitHash_resolvesAndUsesHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
@@ -145,12 +140,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the resolved commit hash
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
+        #expect(result.url == "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
         // AND the commit ref was forwarded to the git service
-        XCTAssertEqual(mockGit.resolveCommitCalledWith, "HEAD")
+        #expect(mockGit.resolveCommitCalledWith == "HEAD")
     }
 
-    func test_generate_withShortCommitHash_resolvesAndUsesFullHash() throws {
+    @Test func generate_withShortCommitHash_resolvesAndUsesFullHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
@@ -168,45 +163,45 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL uses the resolved full hash
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
+        #expect(result.url == "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
         // AND the short hash was forwarded to the git service
-        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
+        #expect(mockGit.resolveCommitCalledWith == "abc123")
     }
 
     // MARK: - Error cases
 
-    func test_generate_nonExistentFile_throwsPathNotFound() {
+    @Test func generate_nonExistentFile_throwsPathNotFound() {
         // GIVEN a path that doesn't exist
         let expectedPath = tempDir.appendingPathComponent("nope.swift").path
 
         // WHEN we generate a link
         // THEN it throws pathNotFound
-        XCTAssertThrowsError(try sut.generate(
-            target: .path(InputParser.parse("nope.swift")),
-            workingDirectory: tempDir.path,
-            branch: nil
-        )) { error in
-            XCTAssertEqual(error as? GitLinkError, .pathNotFound(expectedPath))
+        #expect(throws: GitLinkError.pathNotFound(expectedPath)) {
+            try sut.generate(
+                target: .path(InputParser.parse("nope.swift")),
+                workingDirectory: tempDir.path,
+                branch: nil
+            )
         }
     }
 
-    func test_generate_linesOnDirectory_throwsError() throws {
+    @Test func generate_linesOnDirectory_throwsError() throws {
         // GIVEN a directory exists
         let dirPath = tempDir.appendingPathComponent("Sources")
         try FileManager.default.createDirectory(at: dirPath, withIntermediateDirectories: true)
 
         // WHEN we generate a link with lines on a directory
         // THEN it throws linesOnDirectory
-        XCTAssertThrowsError(try sut.generate(
-            target: .path(InputParser.parse("Sources:5")),
-            workingDirectory: tempDir.path,
-            branch: nil
-        )) { error in
-            XCTAssertEqual(error as? GitLinkError, .linesOnDirectory)
+        #expect(throws: GitLinkError.linesOnDirectory) {
+            try sut.generate(
+                target: .path(InputParser.parse("Sources:5")),
+                workingDirectory: tempDir.path,
+                branch: nil
+            )
         }
     }
 
-    func test_generate_lineOutOfRange_throwsError() throws {
+    @Test func generate_lineOutOfRange_throwsError() throws {
         // GIVEN a file with 5 lines
         let filePath = tempDir.appendingPathComponent("short.swift")
         let content = (1...5).map { "line \($0)" }.joined(separator: "\n")
@@ -214,55 +209,55 @@ final class LinkGeneratorTests: XCTestCase {
 
         // WHEN we generate a link referencing line 10
         // THEN it throws lineOutOfRange
-        XCTAssertThrowsError(try sut.generate(
-            target: .path(InputParser.parse("short.swift:10")),
-            workingDirectory: tempDir.path,
-            branch: nil
-        )) { error in
-            XCTAssertEqual(error as? GitLinkError, .lineOutOfRange(line: 10, totalLines: 5))
+        #expect(throws: GitLinkError.lineOutOfRange(line: 10, totalLines: 5)) {
+            try sut.generate(
+                target: .path(InputParser.parse("short.swift:10")),
+                workingDirectory: tempDir.path,
+                branch: nil
+            )
         }
     }
 
-    func test_generate_unsupportedProvider_throwsProviderNotSupported() {
+    @Test func generate_unsupportedProvider_throwsProviderNotSupported() throws {
         // GIVEN the remote is a GitLab repository
         mockGit.remoteURLResult = .success("https://gitlab.com/depop/my-app.git")
         // AND a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
-        try! "line 1".write(to: filePath, atomically: true, encoding: .utf8)
+        try "line 1".write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link
         // THEN it throws providerNotSupported
-        XCTAssertThrowsError(try sut.generate(
-            target: .path(InputParser.parse("main.swift")),
-            workingDirectory: tempDir.path,
-            branch: nil
-        )) { error in
-            XCTAssertEqual(error as? GitLinkError, .providerNotSupported(provider: "GitLab", issueURL: GitRemoteParser.issueURL))
+        #expect(throws: GitLinkError.providerNotSupported(provider: "GitLab", issueURL: GitRemoteParser.issueURL)) {
+            try sut.generate(
+                target: .path(InputParser.parse("main.swift")),
+                workingDirectory: tempDir.path,
+                branch: nil
+            )
         }
     }
 
-    func test_generate_unknownRemote_throwsUnknownRemote() {
+    @Test func generate_unknownRemote_throwsUnknownRemote() throws {
         // GIVEN the remote is an unrecognised host
         let remoteURL = "https://codeberg.org/depop/my-app.git"
         mockGit.remoteURLResult = .success(remoteURL)
         // AND a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
-        try! "line 1".write(to: filePath, atomically: true, encoding: .utf8)
+        try "line 1".write(to: filePath, atomically: true, encoding: .utf8)
 
         // WHEN we generate a link
         // THEN it throws unknownRemote
-        XCTAssertThrowsError(try sut.generate(
-            target: .path(InputParser.parse("main.swift")),
-            workingDirectory: tempDir.path,
-            branch: nil
-        )) { error in
-            XCTAssertEqual(error as? GitLinkError, .unknownRemote(remoteURL))
+        #expect(throws: GitLinkError.unknownRemote(remoteURL)) {
+            try sut.generate(
+                target: .path(InputParser.parse("main.swift")),
+                workingDirectory: tempDir.path,
+                branch: nil
+            )
         }
     }
 
     // MARK: - Nested file path
 
-    func test_generate_nestedFile_producesCorrectRelativePath() throws {
+    @Test func generate_nestedFile_producesCorrectRelativePath() throws {
         // GIVEN a nested file structure
         let nestedDir = tempDir.appendingPathComponent("Sources/App")
         try FileManager.default.createDirectory(at: nestedDir, withIntermediateDirectories: true)
@@ -278,12 +273,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the path is relative to the repo root
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/Sources/App/main.swift#L5")
+        #expect(result.url == "https://github.com/depop/my-app/blob/main/Sources/App/main.swift#L5")
     }
 
     // MARK: - SSH remote
 
-    func test_generate_sshRemote_producesCorrectURL() throws {
+    @Test func generate_sshRemote_producesCorrectURL() throws {
         // GIVEN the remote uses SSH format
         mockGit.remoteURLResult = .success("git@github.com:depop/my-app.git")
         // AND a file exists
@@ -299,12 +294,12 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL is correct
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/main/main.swift")
+        #expect(result.url == "https://github.com/depop/my-app/blob/main/main.swift")
     }
 
     // MARK: - Commit mode (no path)
 
-    func test_generate_commitTargetWithNoPath_producesCommitURL() throws {
+    @Test func generate_commitTargetWithNoPath_producesCommitURL() throws {
         // GIVEN the resolved commit is a full hash
         mockGit.resolveCommitResult = .success("abc123def456789")
 
@@ -316,18 +311,18 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL points to the commit page
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/commit/abc123def456789")
+        #expect(result.url == "https://github.com/depop/my-app/commit/abc123def456789")
         // AND the repo name is captured
-        XCTAssertEqual(result.repoName, "my-app")
+        #expect(result.repoName == "my-app")
         // AND the ref is the resolved hash
-        XCTAssertEqual(result.ref, "abc123def456789")
+        #expect(result.ref == "abc123def456789")
         // AND the commit ref was forwarded to the git service
-        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
+        #expect(mockGit.resolveCommitCalledWith == "abc123")
     }
 
     // MARK: - Repo root mode
 
-    func test_generate_repoRootTarget_producesTreeURL() throws {
+    @Test func generate_repoRootTarget_producesTreeURL() throws {
         // GIVEN the current branch is "main"
         mockGit.currentBranchResult = .success("main")
 
@@ -339,14 +334,14 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL points to the repo tree
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/main")
+        #expect(result.url == "https://github.com/depop/my-app/tree/main")
         // AND the repo name is captured
-        XCTAssertEqual(result.repoName, "my-app")
+        #expect(result.repoName == "my-app")
         // AND the ref is the current branch
-        XCTAssertEqual(result.ref, "main")
+        #expect(result.ref == "main")
     }
 
-    func test_generate_repoRootWithBranchOverride_usesBranch() throws {
+    @Test func generate_repoRootWithBranchOverride_usesBranch() throws {
         // WHEN we generate a link for a repo root target with a branch override
         let result = try sut.generate(
             target: .repoRoot,
@@ -355,8 +350,8 @@ final class LinkGeneratorTests: XCTestCase {
         )
 
         // THEN the URL includes the overridden branch
-        XCTAssertEqual(result.url, "https://github.com/depop/my-app/tree/develop")
+        #expect(result.url == "https://github.com/depop/my-app/tree/develop")
         // AND the ref is the overridden branch
-        XCTAssertEqual(result.ref, "develop")
+        #expect(result.ref == "develop")
     }
 }
