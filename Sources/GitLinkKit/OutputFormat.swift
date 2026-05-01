@@ -1,4 +1,4 @@
-public enum OutputFormat: String, CaseIterable, Sendable {
+public enum OutputFormat: String, CaseIterable {
     case url
     case markdown
 }
