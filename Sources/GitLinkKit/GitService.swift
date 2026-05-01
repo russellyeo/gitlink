@@ -112,7 +112,7 @@ public final class ShellGitService: GitService {
         let process = Process()
         let pipe = Pipe()
 
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.executableURL = URL(filePath: "/usr/bin/env")
         process.arguments = args
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice

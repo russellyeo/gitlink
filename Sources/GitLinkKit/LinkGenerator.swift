@@ -98,8 +98,8 @@ public final class LinkGenerator {
         if path.hasPrefix("/") {
             return path
         }
-        let workingURL = URL(fileURLWithPath: workingDirectory)
-        return workingURL.appendingPathComponent(path).standardized.path
+        let workingURL = URL(filePath: workingDirectory)
+        return workingURL.appending(path: path).standardized.path
     }
 
     private func makeRelativePath(absolutePath: String, repoRoot: String) -> String {

@@ -90,7 +90,7 @@ struct GitLink: ParsableCommand {
     private func copyToClipboard(_ text: String) {
         let process = Process()
         let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pbcopy")
+        process.executableURL = URL(filePath: "/usr/bin/pbcopy")
         process.standardInput = pipe
         try? process.run()
         pipe.fileHandleForWriting.write(Data(text.utf8))
