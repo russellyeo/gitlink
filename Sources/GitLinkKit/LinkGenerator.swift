@@ -18,7 +18,8 @@ public final class LinkGenerator {
     public func generate(
         target: Target,
         workingDirectory: String,
-        branch: String?
+        branch: String?,
+        commit: String? = nil
     ) throws -> Result {
         let remoteURLString = try gitService.remoteURL()
         let remote = try GitRemoteParser.parse(remoteURLString)
@@ -29,6 +30,7 @@ public final class LinkGenerator {
                 parsed: parsed,
                 workingDirectory: workingDirectory,
                 branch: branch,
+                commit: commit,
                 remote: remote
             )
 
@@ -58,6 +60,7 @@ public final class LinkGenerator {
         parsed: ParsedInput,
         workingDirectory: String,
         branch: String?,
+        commit: String?,
         remote: GitRemote
     ) throws -> Result {
         try parsed.lineSpec?.validate()
@@ -70,7 +73,14 @@ public final class LinkGenerator {
             try PathValidator.validateLines(lineSpec, fileInfo: fileInfo)
         }
 
-        let ref = try branch ?? gitService.currentBranch()
+        let ref: String
+        if let commit {
+            ref = try gitService.resolveCommit(commit)
+        } else if let branch {
+            ref = branch
+        } else {
+            ref = try gitService.currentBranch()
+        }
         let relativePath = makeRelativePath(absolutePath: absolutePath, repoRoot: repoRoot)
         let relativeTarget = Target.path(ParsedInput(path: relativePath, lineSpec: parsed.lineSpec))
 

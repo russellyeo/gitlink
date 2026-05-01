@@ -56,15 +56,9 @@ struct GitLink: ParsableCommand {
         let format = output ?? .url
 
         let target: Target
-        var branchOverride = branch
 
         if let path {
-            let parsed = InputParser.parse(path)
-            if let commit {
-                let resolved = try gitService.resolveCommit(commit)
-                branchOverride = resolved
-            }
-            target = .path(parsed)
+            target = .path(InputParser.parse(path))
         } else if let commit {
             target = .commit(commit)
         } else {
@@ -76,7 +70,8 @@ struct GitLink: ParsableCommand {
             result = try generator.generate(
                 target: target,
                 workingDirectory: cwd,
-                branch: branchOverride
+                branch: branch,
+                commit: target.isPath ? commit : nil
             )
         } catch let error as GitLinkError {
             FileHandle.standardError.write(Data("Error: \(error.errorDescription ?? "\(error)")\n".utf8))

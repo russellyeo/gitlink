@@ -125,44 +125,52 @@ final class LinkGeneratorTests: XCTestCase {
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/develop/main.swift")
     }
 
-    // MARK: - Commit pinning (resolved hash passed as branch)
+    // MARK: - Commit pinning
 
-    func test_generate_withCommitHash_usesResolvedHash() throws {
+    func test_generate_withCommitHash_resolvesAndUsesHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
         try content.write(to: filePath, atomically: true, encoding: .utf8)
-        // AND the resolved commit is a full hash
+        // AND the git service resolves "HEAD" to a full hash
         let resolvedHash = "4f2d8d5a6f0d5f8d7c1234567890abcdef123456"
+        mockGit.resolveCommitResult = .success(resolvedHash)
 
-        // WHEN we generate a link with a resolved commit hash as the branch
+        // WHEN we generate a link with a commit ref
         let result = try sut.generate(
             target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: resolvedHash
+            branch: nil,
+            commit: "HEAD"
         )
 
-        // THEN the URL uses the commit hash
+        // THEN the URL uses the resolved commit hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/4f2d8d5a6f0d5f8d7c1234567890abcdef123456/main.swift")
+        // AND the commit ref was forwarded to the git service
+        XCTAssertEqual(mockGit.resolveCommitCalledWith, "HEAD")
     }
 
-    func test_generate_withShortCommitHash_usesResolvedHash() throws {
+    func test_generate_withShortCommitHash_resolvesAndUsesFullHash() throws {
         // GIVEN a file exists
         let filePath = tempDir.appendingPathComponent("main.swift")
         let content = (1...10).map { "line \($0)" }.joined(separator: "\n")
         try content.write(to: filePath, atomically: true, encoding: .utf8)
-        // AND the resolved commit returns a full hash
+        // AND the git service resolves "abc123" to a full hash
         let resolvedHash = "abc123def456789"
+        mockGit.resolveCommitResult = .success(resolvedHash)
 
-        // WHEN we generate a link with the resolved hash as the branch
+        // WHEN we generate a link with a short commit hash
         let result = try sut.generate(
             target: .path(InputParser.parse("main.swift")),
             workingDirectory: tempDir.path,
-            branch: resolvedHash
+            branch: nil,
+            commit: "abc123"
         )
 
-        // THEN the URL uses the resolved hash
+        // THEN the URL uses the resolved full hash
         XCTAssertEqual(result.url, "https://github.com/depop/my-app/blob/abc123def456789/main.swift")
+        // AND the short hash was forwarded to the git service
+        XCTAssertEqual(mockGit.resolveCommitCalledWith, "abc123")
     }
 
     // MARK: - Error cases
