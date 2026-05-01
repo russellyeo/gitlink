@@ -1,18 +1,28 @@
 # gitlink
 
-Generate web links from local file paths for code repositories.
-
-Currently only supports **GitHub**.
+Generate shareable GitHub URLs from your local git working copy — files, lines, commits, and more.
 
 ## Usage
 
 ```
-gitlink <path>[:<line>[-<end_line>]]
+gitlink [options] [<path>[:<line>[-<end_line>]]]
 ```
 
 ### Examples
 
 ```bash
+# Repo root on current branch
+gitlink
+# → https://github.com/your-org/your-repo/tree/feature-x
+
+# Repo root on a specific branch
+gitlink --branch develop
+# → https://github.com/your-org/your-repo/tree/develop
+
+# Commit page
+gitlink --commit abc123
+# → https://github.com/your-org/your-repo/commit/abc123...
+
 # File on current branch
 gitlink Sources/App/main.swift
 # → https://github.com/your-org/your-repo/blob/feature-x/Sources/App/main.swift
@@ -29,13 +39,9 @@ gitlink Sources/App/main.swift:12
 gitlink Sources/App/
 # → https://github.com/your-org/your-repo/tree/feature-x/Sources/App
 
-# Pin to HEAD commit
+# File pinned to a commit
 gitlink --commit HEAD Sources/App/main.swift
 # → https://github.com/your-org/your-repo/blob/4f2d8d5.../Sources/App/main.swift
-
-# Pin to specific commit
-gitlink --commit abc123 Sources/App/main.swift
-# → https://github.com/your-org/your-repo/blob/abc123.../Sources/App/main.swift
 
 # Use a specific branch
 gitlink --branch main Sources/App/main.swift
@@ -60,7 +66,7 @@ gitlink --output markdown Sources/App/main.swift:12-20
 | `--help` | Show help information. |
 
 
-## Install
+## Installation
 
 ### Mint
 
@@ -70,25 +76,16 @@ mint install russellyeo/gitlink
 
 ### Build from source
 
+Requirements:
+
+- macOS 13+
+- Swift 5.9+
+- Git
+- A supported `origin` remote (GitHub)
+
 ```bash
 git clone https://github.com/russellyeo/gitlink.git
 cd gitlink
 swift build -c release
 sudo cp .build/release/gitlink /usr/local/bin/
 ```
-
-## Agent Integration
-
-gitlink is designed for use by coding agents (Claude Code, Copilot, etc.):
-
-- Single URL output on stdout — easy to capture
-- Non-zero exit code on errors, messages on stderr
-- `--help` for discoverability
-- No interactive prompts
-
-## Requirements
-
-- macOS 13+
-- Swift 5.9+
-- Git
-- A supported `origin` remote (GitHub)
