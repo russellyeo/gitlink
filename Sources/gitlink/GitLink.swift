@@ -65,7 +65,7 @@ struct GitLink: ParsableCommand {
             target = .repoRoot
         }
 
-        let result: LinkGenerator.Result
+        let result: LinkGenerator.GeneratedLink
         do {
             result = try generator.generate(
                 target: target,

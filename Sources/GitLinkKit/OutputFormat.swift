@@ -6,7 +6,7 @@ public enum OutputFormat: String, CaseIterable, Sendable {
 public enum OutputFormatter {
 
     public static func format(
-        result: LinkGenerator.Result,
+        result: LinkGenerator.GeneratedLink,
         format: OutputFormat
     ) -> String {
         switch format {
@@ -18,7 +18,7 @@ public enum OutputFormatter {
         }
     }
 
-    private static func markdownTitle(result: LinkGenerator.Result) -> String {
+    private static func markdownTitle(result: LinkGenerator.GeneratedLink) -> String {
         switch result.target {
         case .commit(let hash):
             return "\(result.repoName)/\(hash)"

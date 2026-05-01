@@ -9,7 +9,7 @@ final class OutputFormatterTests: XCTestCase {
         // GIVEN a URL and the url format
         let url = "https://github.com/depop/my-app/blob/main/main.swift"
         let target = Target.path(ParsedInput(path: "main.swift", lineSpec: nil))
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "main")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "main")
 
         // WHEN we format the output
         let formatted = OutputFormatter.format(result: result, format: .url)
@@ -24,7 +24,7 @@ final class OutputFormatterTests: XCTestCase {
         // GIVEN a URL with no line spec
         let url = "https://github.com/depop/my-app/blob/main/Sources/App/main.swift"
         let target = Target.path(ParsedInput(path: "Sources/App/main.swift", lineSpec: nil))
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "main")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "main")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)
@@ -38,7 +38,7 @@ final class OutputFormatterTests: XCTestCase {
         let url = "https://github.com/depop/my-app/blob/main/main.swift#L12"
         let lineSpec = LineSpec.single(12)
         let target = Target.path(ParsedInput(path: "main.swift", lineSpec: lineSpec))
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "main")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "main")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)
@@ -52,7 +52,7 @@ final class OutputFormatterTests: XCTestCase {
         let url = "https://github.com/depop/my-app/blob/main/main.swift#L12-L20"
         let lineSpec = LineSpec.range(start: 12, end: 20)
         let target = Target.path(ParsedInput(path: "main.swift", lineSpec: lineSpec))
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "main")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "main")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)
@@ -67,7 +67,7 @@ final class OutputFormatterTests: XCTestCase {
         // GIVEN a commit target URL
         let url = "https://github.com/depop/my-app/commit/abc123def456"
         let target = Target.commit("abc123def456")
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "abc123def456")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "abc123def456")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)
@@ -82,7 +82,7 @@ final class OutputFormatterTests: XCTestCase {
         // GIVEN a repo root target URL
         let url = "https://github.com/depop/my-app/tree/main"
         let target = Target.repoRoot
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "main")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "main")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)
@@ -95,7 +95,7 @@ final class OutputFormatterTests: XCTestCase {
         // GIVEN a repo root target URL on a feature branch
         let url = "https://github.com/depop/my-app/tree/feature/search"
         let target = Target.repoRoot
-        let result = LinkGenerator.Result(url: url, target: target, repoName: "my-app", ref: "feature/search")
+        let result = LinkGenerator.GeneratedLink(url: url, target: target, repoName: "my-app", ref: "feature/search")
 
         // WHEN we format as markdown
         let formatted = OutputFormatter.format(result: result, format: .markdown)

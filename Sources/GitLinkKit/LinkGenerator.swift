@@ -8,7 +8,7 @@ public final class LinkGenerator {
         self.gitService = gitService
     }
 
-    public struct Result {
+    public struct GeneratedLink {
         public let url: String
         public let target: Target
         public let repoName: String
@@ -20,7 +20,7 @@ public final class LinkGenerator {
         workingDirectory: String,
         branch: String?,
         commit: String? = nil
-    ) throws -> Result {
+    ) throws -> GeneratedLink {
         let remoteURLString = try gitService.remoteURL()
         let remote = try GitRemoteParser.parse(remoteURLString)
 
@@ -42,7 +42,7 @@ public final class LinkGenerator {
                 target: .commit(resolved),
                 isDirectory: nil
             )
-            return Result(url: url, target: .commit(resolved), repoName: remote.repo, ref: resolved)
+            return GeneratedLink(url: url, target: .commit(resolved), repoName: remote.repo, ref: resolved)
 
         case .repoRoot:
             let ref = try branch ?? gitService.currentBranch()
@@ -52,7 +52,7 @@ public final class LinkGenerator {
                 target: .repoRoot,
                 isDirectory: nil
             )
-            return Result(url: url, target: .repoRoot, repoName: remote.repo, ref: ref)
+            return GeneratedLink(url: url, target: .repoRoot, repoName: remote.repo, ref: ref)
         }
     }
 
@@ -62,7 +62,7 @@ public final class LinkGenerator {
         branch: String?,
         commit: String?,
         remote: GitRemote
-    ) throws -> Result {
+    ) throws -> GeneratedLink {
         try parsed.lineSpec?.validate()
 
         let repoRoot = try gitService.repositoryRoot()
@@ -91,7 +91,7 @@ public final class LinkGenerator {
             isDirectory: fileInfo.isDirectory
         )
 
-        return Result(url: url, target: relativeTarget, repoName: remote.repo, ref: ref)
+        return GeneratedLink(url: url, target: relativeTarget, repoName: remote.repo, ref: ref)
     }
 
     private func resolvePath(_ path: String, workingDirectory: String) -> String {
