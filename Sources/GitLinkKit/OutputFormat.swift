@@ -6,27 +6,34 @@ public enum OutputFormat: String, CaseIterable, Sendable {
 public enum OutputFormatter {
 
     public static func format(
-        url: String,
-        path: String,
-        lineSpec: LineSpec?,
+        result: LinkGenerator.Result,
         format: OutputFormat
     ) -> String {
         switch format {
         case .url:
-            return url
+            return result.url
         case .markdown:
-            let title = markdownTitle(path: path, lineSpec: lineSpec)
-            return "[\(title)](\(url))"
+            let title = markdownTitle(result: result)
+            return "[\(title)](\(result.url))"
         }
     }
 
-    private static func markdownTitle(path: String, lineSpec: LineSpec?) -> String {
-        guard let lineSpec else { return path }
-        switch lineSpec {
-        case .single(let line):
-            return "\(path)#L\(line)"
-        case .range(let start, let end):
-            return "\(path)#L\(start)-L\(end)"
+    private static func markdownTitle(result: LinkGenerator.Result) -> String {
+        switch result.target {
+        case .commit(let hash):
+            return "\(result.repoName)/\(hash)"
+
+        case .repoRoot:
+            return "\(result.repoName)/\(result.ref)"
+
+        case .path(let parsed):
+            guard let lineSpec = parsed.lineSpec else { return parsed.path }
+            switch lineSpec {
+            case .single(let line):
+                return "\(parsed.path)#L\(line)"
+            case .range(let start, let end):
+                return "\(parsed.path)#L\(start)-L\(end)"
+            }
         }
     }
 }
