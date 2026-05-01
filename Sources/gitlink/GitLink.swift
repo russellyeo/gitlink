@@ -7,27 +7,29 @@ extension OutputFormat: ExpressibleByArgument {}
 @main
 struct GitLink: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Generate web links from local file paths for GitHub repositories.",
+        abstract: "Generate web links for GitHub repositories.",
         usage: """
-            gitlink [options] <path>[:<line>[-<end_line>]]
+            gitlink [options] [<path>[:<line>[-<end_line>]]]
             """,
         discussion: """
             Converts local file or directory paths into web URLs for sharing.
+            Run with no arguments to link to the repo root on the current branch.
             Currently supports GitHub.
 
             Examples:
+              gitlink                                         Repo root on current branch
+              gitlink --branch develop                        Repo root on specific branch
+              gitlink --commit abc123                         Commit page
               gitlink Sources/App/main.swift                  File on current branch
               gitlink Sources/App/main.swift:12-20            File with line range
-              gitlink Sources/App/                            Directory
-              gitlink --commit HEAD Sources/App/main.swift    Pinned to HEAD commit
-              gitlink --branch main Sources/App/main.swift    Specific branch
+              gitlink --commit HEAD Sources/App/main.swift    File pinned to commit
               gitlink --output markdown Sources/App/main.swift:12-20  Markdown link
               gitlink --copy --output markdown Sources/App/main.swift Copy markdown to clipboard
             """
     )
 
     @Argument(help: "File or directory path, optionally with :<line>[-<end>] (e.g. Sources/main.swift:12-20)")
-    var path: String
+    var path: String?
 
     @Option(name: .long, help: "Use a specific branch instead of the current one.")
     var branch: String?
@@ -48,29 +50,40 @@ struct GitLink: ParsableCommand {
     }
 
     func run() throws {
-        let generator = LinkGenerator(gitService: ShellGitService())
+        let gitService = ShellGitService()
+        let generator = LinkGenerator(gitService: gitService)
         let cwd = FileManager.default.currentDirectoryPath
         let format = output ?? .url
+
+        let target: Target
+        var branchOverride = branch
+
+        if let path {
+            let parsed = InputParser.parse(path)
+            if let commit {
+                let resolved = try gitService.resolveCommit(commit)
+                branchOverride = resolved
+            }
+            target = .path(parsed)
+        } else if let commit {
+            target = .commit(commit)
+        } else {
+            target = .repoRoot
+        }
 
         let result: LinkGenerator.Result
         do {
             result = try generator.generate(
-                input: path,
+                target: target,
                 workingDirectory: cwd,
-                branch: branch,
-                commit: commit
+                branch: branchOverride
             )
         } catch let error as GitLinkError {
             FileHandle.standardError.write(Data("Error: \(error.errorDescription ?? "\(error)")\n".utf8))
             throw ExitCode.failure
         }
 
-        let formatted = OutputFormatter.format(
-            url: result.url,
-            path: result.relativePath,
-            lineSpec: result.lineSpec,
-            format: format
-        )
+        let formatted = OutputFormatter.format(result: result, format: format)
 
         print(formatted)
 
