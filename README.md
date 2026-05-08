@@ -67,6 +67,13 @@ gitlink --output markdown Sources/App/main.swift:12-20
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew tap russellyeo/tap
+brew install gitlink
+```
+
 ### Mint
 
 ```bash
